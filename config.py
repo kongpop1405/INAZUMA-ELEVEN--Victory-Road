@@ -86,24 +86,32 @@ FARM_STEPS = [
 
 # --- ⚙️ การตั้งค่าระบบ ---
 
-# --- Screen Settings ---
+# --- 🖥️ Screen & Window Settings ---
 SCREEN_WIDTH, SCREEN_HEIGHT = pyautogui.size()
 CX, CY = SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2
+GAME_WINDOW_TITLE = "Inazuma Eleven: Victory Road" # เตรียมไว้สำหรับ Window-Based
 
-# --- File Paths ---
+# --- 📂 Path Settings ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IMG_DIR = os.path.join(BASE_DIR, "img")
-SCREENSHOT_DIR = os.path.join(BASE_DIR, "logs_screenshots")
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+SCREENSHOT_DIR = os.path.join(LOG_DIR, "screenshots")
 STATS_FILE = os.path.join(BASE_DIR, "bot_stats.json")
 
-# --- Limits & Thresholds ---
+# --- ⚙️ Bot Logic Limits ---
 MATCH_WAIT_LIMIT = 200
 NORMAL_WAIT_LIMIT = 30
-STATION_STUCK_LIMIT = 10
-CONSECUTIVE_BACK_LIMIT = 3   # จำนวนครั้งที่ยอมให้ถอยซ้ำที่เดิมก่อน Hard Reset
-NEXT_CLICK_INTERVAL = 5      # ทุกๆ กี่รอบที่หาไม่เจอ ถึงจะทำการคลิกย้ำ
+CONSECUTIVE_BACK_LIMIT = 3
+NEXT_CLICK_INTERVAL = 5      # คลิกย้ำทุกๆกี่ครั้งที่หาภาพไม่เจอ
+MATCH_PHASE_SCAN_DELAY = 50  # จำนวนรอบที่ให้รอก่อนเริ่มสแกนจริงใน Match Phase
+ENABLE_SCREENSHOT = True     # ✅ เพิ่มที่นี่: True = เปิดการบันทึกภาพเมื่อพลาด, False = ปิด
+MAX_SCREENSHOTS = 50         # ✅ เพิ่มที่นี่: จำนวนรูปภาพสูงสุดที่จะเก็บไว้ (เช่น 50 รูป)
 
-# --- Timings ---
-POST_MATCH_REST = 10.0       # เวลาพักหลังจบรอบ
+# --- ⌨️ Input Settings ---
+KEY_PRESS_DURATION = 0.1     # เวลาที่กดปุ่มค้างไว้ (วินาที)
+POST_MATCH_REST = 10.0       # พักจบรอบ
 DEFAULT_POST_DELAY = 0.1
-KEY_PRESS_DURATION = 0.1     # ระยะเวลาการกดปุ่มค้าง (วินาที)
+
+# --- 🚨 Discord Notify Settings (เตรียมไว้สำหรับระบบใหม่) ---
+DISCORD_WEBHOOK_URL = ""     # ใส่ URL เมื่อต้องการใช้งาน
+ENABLE_NOTIFY = False        # เปิด-ปิด ระบบแจ้งเตือน

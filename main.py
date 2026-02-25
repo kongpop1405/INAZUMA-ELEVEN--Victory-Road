@@ -1,121 +1,95 @@
-import pyautogui, time, gc, random
+import time, gc
 from config import *
-from utils import update_step_stats, find_best_match, press_key, save_error_screenshot
+from screen_manager import ScreenManager
+from stats_manager import StatsManager
+import utils # สำหรับพวก press_key และ save_screenshot
 
-state = {
-    "cur": 0, "retry": 0, "last_time": time.time(), "in_match": False,
-    "next_click_count": 0, "consecutive_back_steps": 0, "last_back_step_idx": -1, "rounds": 0
-}
+class AwakeningBot:
+    def __init__(self):
+        self.screen = ScreenManager()
+        self.stats = StatsManager()
+        self.state = {
+            "cur_idx": 0, "retry": 0, "last_time": time.time(),
+            "back_count": 0, "last_back_idx": -1, "total_rounds": 0
+        }
 
-def handle_success(step, res):
-    global state
-    state["consecutive_back_steps"] = 0
-    state["last_back_step_idx"] = -1
-    
-    now = time.time()
-    elapsed = now - state["last_time"]
-    x, y, acc, name = res
-    is_end = (state["cur"] == len(FARM_STEPS) - 1)
-    
-    new_delay, total_rounds = update_step_stats(step['label'], elapsed, is_end)
-    state["rounds"] = total_rounds
-    
-    print(f"\n✅ เจอภาพ: {step['label']} | ใช้เวลา: {elapsed:.2f}s | Acc: {acc:.2f}")
-    pyautogui.click(x, y)
-    pyautogui.moveTo(CX, CY, duration=0) 
+    def run(self):
+        print("🚀 Awakening System: Standby...")
+        time.sleep(2)
+        
+        while True:
+            step = FARM_STEPS[self.state["cur_idx"]]
+            is_match = step.get("is_match_phase", False)
+            limit = MATCH_WAIT_LIMIT if is_match else NORMAL_WAIT_LIMIT
 
-    if "post_key" in step:
-        time.sleep(new_delay) 
-        print(f"   ∟ ⌨️ Action: กดปุ่ม {step['post_key']}")
-        press_key(step['post_key'])
-    
-    if is_end:
-        gc.collect()
-        print(f"\n🏆 จบรอบที่ {state['rounds']} | พัก {POST_MATCH_REST}s\n" + "🏆"*20)
-        time.sleep(POST_MATCH_REST)
+            # 🛡️ Match Phase Initial Delay (ย้าย logic มาจาก main เดิม)
+            if is_match and self.state["retry"] < MATCH_PHASE_SCAN_DELAY:
+                self.state["retry"] += 1
+                print(f"⏳ {step['label']}: รอกด ({self.state['retry']}/{MATCH_PHASE_SCAN_DELAY})", end="\r")
+                time.sleep(1.0)
+                continue
 
-    state["cur"] = (state["cur"] + 1) % len(FARM_STEPS)
-    state["in_match"] = FARM_STEPS[state["cur"]].get("is_match_phase", False)
-    state["retry"] = 0
-    state["last_time"] = time.time()
-    state["next_click_count"] = 0
-    time.sleep(step.get("post_delay", DEFAULT_POST_DELAY))
+            print(f"🔍 หาภาพ: {step['label']} | ครั้งที่: {self.state['retry'] + 1}/{limit}", end="\r")
+            res = self.screen.find_best_match(step["files"], step["thresh"])
 
-def handle_failure(step, available_keys):
-    global state
-    state["retry"] += 1
-    limit = MATCH_WAIT_LIMIT if state["in_match"] else NORMAL_WAIT_LIMIT
-    
-    if "Next" in step['label'] and state["retry"] % NEXT_CLICK_INTERVAL == 0:
-        state["next_click_count"] += 1
-        print(f"👉 [Action] คลิกย้ำครั้งที่ {state['next_click_count']} ที่ {step['label']}")
-        pyautogui.click(CX, CY + 150)
-
-    if state["retry"] >= limit:
-        # save_error_screenshot(step['label'])
-        update_step_stats(step['label'], is_step_back=True)
-
-        if state["last_back_step_idx"] == state["cur"]:
-            state["consecutive_back_steps"] += 1
-        else:
-            state["consecutive_back_steps"] = 1
-            state["last_back_step_idx"] = state["cur"]
-
-        print(f"\n❌ [LOG] พลาด {step['label']} ต่อเนื่องครั้งที่ {state['consecutive_back_steps']}")
-
-        if state["consecutive_back_steps"] >= CONSECUTIVE_BACK_LIMIT:
-            print(f"⚠️ [BREAK LOOP] ทำการ Hard Reset ไปหน้า Station")
-            state["cur"] = 0
-            state["consecutive_back_steps"] = 0
-        else:
-            if state["cur"] == 0:
-                state["cur"] = len(FARM_STEPS) - 1
-                print(f"🔙 [LOG] ย้อนจากหน้าแรก ไปขั้นตอนสุดท้าย")
+            if res:
+                self._on_success(step, res)
             else:
-                state["cur"] -= 1
-                print(f"🔙 [LOG] ย้อนกลับไป {FARM_STEPS[state['cur']]['label']}")
+                self._on_failure(step, limit)
+
+    def _on_success(self, step, res):
+        elapsed = time.time() - self.state["last_time"]
+        is_end = (self.state["cur_idx"] == len(FARM_STEPS) - 1)
         
-        state["retry"] = 0
-        state["next_click_count"] = 0
-        state["in_match"] = False
-        state["last_time"] = time.time()
-        pyautogui.moveTo(CX, CY)
-
-    time.sleep(0.2 if not state["in_match"] else 1.0)
-
-def main_loop():
-    print("="*65 + "\n🚀 Awakening System: Optimized Function Structure\n" + "="*65)
-    available_keys = list(set([step['post_key'] for step in FARM_STEPS if 'post_key' in step] + ['U']))
-    last_step_idx = -1
-
-    while True:
-        step = FARM_STEPS[state["cur"]]
+        new_delay, rounds = self.stats.update_stats(step['label'], elapsed, is_end)
+        print(f"\n✅ เจอ {step['label']} | Acc: {res[2]:.2f} | Time: {elapsed:.2f}s")
         
-        # ✅ เช็คว่าถ้าเปลี่ยน Step ใหม่ ให้รีเซ็ต retry เฉพาะกิจสำหรับ match_phase
-        if last_step_idx != state["cur"]:
-            if step.get("is_match_phase"):
-                state["retry"] = 0  # บังคับเริ่มนับ 1 ใหม่สำหรับช่วงแข่ง
-            last_step_idx = state["cur"]
+        utils.perform_click(res[0], res[1]) # ฟังก์ชันใหม่ที่แยกไป utils
+        
+        if "post_key" in step:
+            time.sleep(new_delay)
+            utils.press_key(step['post_key'])
 
-        limit = MATCH_WAIT_LIMIT if state["in_match"] else NORMAL_WAIT_LIMIT
+        if is_end:
+            print(f"\n🏆 จบรอบที่ {rounds} | พัก {POST_MATCH_REST}s")
+            time.sleep(POST_MATCH_REST)
+            gc.collect()
 
-        # --- 🛡️ เพิ่มระบบ Wait for 50 before Scan ---
-        if step.get("is_match_phase") and state["retry"] < 50:
-            state["retry"] += 1
-            # แสดง Label ให้ชัดเจนว่ากำลังรอกดของขั้นตอนไหน
-            print(f"⏳ {step['label']}: ช่วงแข่ง ({state['retry']}/50) ", end="\r")
-            time.sleep(1.0) 
-            continue
+        self.state.update({"cur_idx": (self.state["cur_idx"]+1)%len(FARM_STEPS), "retry": 0, "last_time": time.time(), "back_count": 0})
+        time.sleep(step.get("post_delay", DEFAULT_POST_DELAY))
+
+    def _on_failure(self, step, limit):
+        self.state["retry"] += 1
+        
+        # คลิกย้ำ (เฉพาะปุ่ม Next)
+        if "Next" in step['label'] and self.state["retry"] % NEXT_CLICK_INTERVAL == 0:
+            utils.perform_click(CX, CY + 150)
+
+        if self.state["retry"] >= limit:
+            # ✅ ตรวจสอบ Config ก่อนบันทึกภาพหน้าจอ
+            if ENABLE_SCREENSHOT:
+                # เรียกใช้ฟังก์ชันบันทึกภาพที่แยกไว้ใน utils
+                utils.save_error_screenshot(step['label'])
+                print(f"📸 [System] บันทึกภาพความผิดพลาดของ {step['label']} เรียบร้อย")
             
-        print(f"🔍 กำลังหาภาพ: {step['label']} | ครั้งที่: {state['retry'] + 1}/{limit}  ", end="\r")
-        res = find_best_match(step["files"], step["thresh"])
-        
-        if res:
-            handle_success(step, res)
+            self.stats.update_stats(step['label'], is_step_back=True)
+            self._handle_step_back()
+
+    def _handle_step_back(self):
+        # Logic Step Back เดิมจาก main.py
+        if self.state["last_back_idx"] == self.state["cur_idx"]:
+            self.state["back_count"] += 1
         else:
-            handle_failure(step, available_keys)
+            self.state["back_count"] = 1
+            self.state["last_back_idx"] = self.state["cur_idx"]
+
+        if self.state["back_count"] >= CONSECUTIVE_BACK_LIMIT:
+            self.state["cur_idx"] = 0 # Hard Reset
+        else:
+            self.state["cur_idx"] = max(0, self.state["cur_idx"] - 1)
+        
+        self.state.update({"retry": 0, "last_time": time.time()})
 
 if __name__ == "__main__":
-    time.sleep(2)
-    try: main_loop()
-    except KeyboardInterrupt: print("\n🔍 หยุดการทำงานโดยผู้ใช้")
+    bot = AwakeningBot()
+    bot.run()

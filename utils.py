@@ -1,80 +1,97 @@
-import cv2, numpy as np, pyautogui, time, win32api, win32con, os, json
+import cv2
+import numpy as np
+import pyautogui
+import time
+import win32api
+import win32con
+import os
+import glob
 from datetime import datetime
-from config import IMG_DIR, SCREENSHOT_DIR, STATS_FILE, KEY_PRESS_DURATION
+from config import SCREENSHOT_DIR, KEY_PRESS_DURATION
 
-# สร้างโฟลเดอร์พื้นฐาน
-for path in [IMG_DIR, SCREENSHOT_DIR]:
-    if not os.path.exists(path): os.makedirs(path)
+# --- 📂 ส่วนที่ 1: การจัดการไฟล์และระบบพื้นฐาน ---
 
-def find_best_match(image_list, threshold):
-    screen = cv2.cvtColor(np.array(pyautogui.screenshot()), cv2.COLOR_RGB2BGR)
-    gray = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
-    edged = cv2.Canny(gray, 150, 250)
-    best = None
+def ensure_dirs():
+    """ตรวจสอบและสร้างโฟลเดอร์ที่จำเป็น"""
+    if not os.path.exists(SCREENSHOT_DIR):
+        os.makedirs(SCREENSHOT_DIR)
+
+def save_error_screenshot(label):
+    """บันทึกภาพหน้าจอพร้อมทำความสะอาดไฟล์เก่า"""
+    ensure_dirs()
     
-    for img_name in image_list:
-        img_path = os.path.join(IMG_DIR, img_name)
-        if not os.path.exists(img_path): continue
-        try:
-            img_array = np.fromfile(img_path, np.uint8)
-            temp = cv2.imdecode(img_array, cv2.IMREAD_GRAYSCALE)
-            if temp is None: continue
-            e_temp = cv2.Canny(temp, 150, 250)
-            res = cv2.matchTemplate(edged, e_temp, cv2.TM_CCOEFF_NORMED)
-            _, mVal, _, mLoc = cv2.minMaxLoc(res)
-            if best is None or mVal > best[0]:
-                if mVal >= threshold: 
-                    best = (mVal, mLoc, e_temp.shape[:2], img_name)
-        except: continue
-    if best:
-        acc, loc, (rH, rW), name = best
-        return (int(loc[0] + rW/2), int(loc[1] + rH/2), acc, name)
-    return None
-
-def update_step_stats(label, elapsed_time=0, is_round_end=False, is_miss=False, is_step_back=False):
-    if os.path.exists(STATS_FILE):
-        with open(STATS_FILE, 'r', encoding='utf-8') as f:
-            try: data = json.load(f)
-            except: data = {"steps_data": {}, "total_rounds": 0}
-    else: data = {"steps_data": {}, "total_rounds": 0}
-
-    if label not in data["steps_data"]: 
-        data["steps_data"][label] = {"latencies": [], "total_searches": 0, "fail_count": 0, "success_count": 0, "step_back_count": 0}
+    # ตรวจสอบและลบไฟล์เก่าก่อนบันทึกไฟล์ใหม่
+    cleanup_screenshots() 
     
-    step_entry = data["steps_data"][label]
-    if is_step_back:
-        step_entry["step_back_count"] += 1
-    elif is_miss:
-        step_entry["fail_count"] += 1
-        step_entry["total_searches"] += 1
-    else:
-        if is_round_end: data["total_rounds"] += 1
-        step_entry["success_count"] += 1
-        step_entry["total_searches"] += 1
-        if 0.01 <= elapsed_time < 30:
-            lats = step_entry.get("latencies", [])
-            lats.append(round(elapsed_time, 2))
-            if len(lats) > 10: lats.pop(0)
-            avg = round(sum(lats)/len(lats), 2)
-            step_entry["avg_latency"] = avg
-            step_entry["current_optimized_delay"] = max(0.1, round(avg * 1.1, 2))
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"FAIL_{label}_{timestamp}.png"
+    filepath = os.path.join(SCREENSHOT_DIR, filename)
+    pyautogui.screenshot().save(filepath)
+    return filepath
 
-    with open(STATS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-    return step_entry.get("current_optimized_delay", 0.2), data["total_rounds"]
+def cleanup_screenshots():
+    """จัดการลบรูปภาพที่เก่าที่สุดเมื่อจำนวนไฟล์เกิน MAX_SCREENSHOTS"""
+    from config import SCREENSHOT_DIR, MAX_SCREENSHOTS
+    
+    # ดึงรายชื่อไฟล์ .png ทั้งหมดในโฟลเดอร์
+    files = glob.glob(os.path.join(SCREENSHOT_DIR, "*.png"))
+    
+    # ถ้าจำนวนไฟล์เกินขีดจำกัด
+    if len(files) > MAX_SCREENSHOTS:
+        # เรียงลำดับไฟล์ตามเวลาที่แก้ไขล่าสุด (เก่าไปใหม่)
+        files.sort(key=os.path.getmtime)
+        
+        # คำนวณจำนวนที่ต้องลบ
+        files_to_delete = files[:len(files) - MAX_SCREENSHOTS]
+        
+        for f in files_to_delete:
+            try:
+                os.remove(f)
+                # print(f"🧹 [Cleanup] ลบไฟล์ภาพเก่า: {os.path.basename(f)}")
+            except Exception as e:
+                print(f"⚠️ [Cleanup] ไม่สามารถลบไฟล์ {f} ได้: {e}")
+                
+# --- 🖱️ ส่วนที่ 2: การจัดการ Mouse Input (เตรียมรองรับ Human-like) ---
+
+def perform_click(x, y):
+    """
+    ฟังก์ชันหลักในการคลิก 
+    ในอนาคตจะเปลี่ยนเป็น Human-like Click (mouseDown/Up) ได้ที่นี่
+    """
+    # ปัจจุบันใช้ระบบเดิมตาม main.py
+    pyautogui.click(x, y)
+    
+    # นำเมาส์กลับไปพักที่กลางจอเพื่อไม่ให้บังปุ่ม
+    # หมายเหตุ: CX, CY จะถูกดึงผ่าน parameter หรือ config
+    # pyautogui.moveTo(CX, CY, duration=0) 
+
+# --- ⌨️ ส่วนที่ 3: การจัดการ Keyboard Input ---
 
 def press_key(key):
-    special_keys = {'ALT': win32con.VK_MENU, 'ENTER': win32con.VK_RETURN, 'ESC': win32con.VK_ESCAPE, 'CTRL': win32con.VK_CONTROL}
+    """ส่งคำสั่งกดปุ่มคีย์บอร์ดแบบกำหนดระยะเวลาค้าง"""
+    special_keys = {
+        'ALT': win32con.VK_MENU, 
+        'ENTER': win32con.VK_RETURN, 
+        'ESC': win32con.VK_ESCAPE, 
+        'CTRL': win32con.VK_CONTROL
+    }
+    
     if isinstance(key, str) and key.upper() in special_keys:
         k = special_keys[key.upper()]
     elif isinstance(key, str):
         k = ord(key.upper())
-    else: k = key
+    else:
+        k = key
+        
+    # กดปุ่มลง
     win32api.keybd_event(k, 0, 0, 0)
+    # รอตามเวลาที่ตั้งไว้ใน config
     time.sleep(KEY_PRESS_DURATION)
+    # ปล่อยปุ่ม
     win32api.keybd_event(k, 0, win32con.KEYEVENTF_KEYUP, 0)
 
-def save_error_screenshot(label):
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"FAIL_{label}_{timestamp}.png"
-    pyautogui.screenshot().save(os.path.join(SCREENSHOT_DIR, filename))
+# --- 🧪 ส่วนที่ 4: Image Processing Helpers ---
+
+def get_edged_image(image_gray):
+    """แปลงภาพ Gray เป็น Edged (Canny) เพื่อความแม่นยำในการ Match"""
+    return cv2.Canny(image_gray, 150, 250)
