@@ -52,7 +52,7 @@ def handle_failure(step, available_keys):
         pyautogui.click(CX, CY + 150)
 
     if state["retry"] >= limit:
-        save_error_screenshot(step['label'])
+        # save_error_screenshot(step['label'])
         update_step_stats(step['label'], is_step_back=True)
 
         if state["last_back_step_idx"] == state["cur"]:
