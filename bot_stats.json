@@ -3,142 +3,217 @@
         "Station": {
             "latencies": [
                 2.26,
-                1.77
+                2.24,
+                2.24,
+                2.27,
+                2.25,
+                2.25,
+                2.25,
+                2.25,
+                2.25,
+                2.25
             ],
-            "total_searches": 2,
+            "total_searches": 54,
             "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 0,
-            "avg_latency": 2.01,
-            "current_optimized_delay": 2.21
+            "success_count": 54,
+            "step_back_count": 9,
+            "avg_latency": 2.25,
+            "current_optimized_delay": 2.48
+        },
+        "Final Result": {
+            "latencies": [
+                2.21,
+                2.21,
+                0.54,
+                2.22,
+                2.22,
+                2.2,
+                2.22,
+                0.53,
+                2.2,
+                0.51
+            ],
+            "total_searches": 55,
+            "fail_count": 0,
+            "success_count": 55,
+            "step_back_count": 1,
+            "avg_latency": 1.71,
+            "current_optimized_delay": 1.88
         },
         "Hero Battle": {
             "latencies": [
-                2.57,
-                2.54
+                3.64,
+                3.64,
+                3.63,
+                3.64,
+                3.63,
+                3.64,
+                3.64,
+                3.63,
+                3.64,
+                3.64
             ],
-            "total_searches": 2,
+            "total_searches": 54,
             "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 0,
-            "avg_latency": 2.55,
-            "current_optimized_delay": 2.81
+            "success_count": 54,
+            "step_back_count": 4,
+            "avg_latency": 3.64,
+            "current_optimized_delay": 4.0
         },
         "Start Match": {
             "latencies": [
-                1.03,
-                1.02
+                2.64,
+                2.64,
+                2.67,
+                2.65,
+                2.63,
+                2.63,
+                2.64,
+                2.64,
+                2.64,
+                2.63
             ],
-            "total_searches": 2,
+            "total_searches": 52,
             "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 0,
-            "avg_latency": 1.02,
-            "current_optimized_delay": 1.12
+            "success_count": 52,
+            "step_back_count": 4,
+            "avg_latency": 2.64,
+            "current_optimized_delay": 2.9
         },
         "Yes": {
             "latencies": [
-                0.85,
-                0.85
+                1.44,
+                1.44,
+                1.45,
+                1.45,
+                1.45,
+                1.44,
+                1.45,
+                1.45,
+                1.44,
+                1.44
             ],
-            "total_searches": 2,
+            "total_searches": 52,
             "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 0,
-            "avg_latency": 0.85,
-            "current_optimized_delay": 0.94
+            "success_count": 52,
+            "step_back_count": 2,
+            "avg_latency": 1.44,
+            "current_optimized_delay": 1.58
         },
         "Press": {
             "latencies": [
-                7.16,
-                7.14
+                6.66,
+                6.6,
+                6.69,
+                6.78,
+                6.61,
+                6.66,
+                6.73,
+                6.61,
+                6.72,
+                6.58
             ],
-            "total_searches": 2,
+            "total_searches": 53,
             "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 0,
-            "avg_latency": 7.15,
-            "current_optimized_delay": 7.87
+            "success_count": 53,
+            "step_back_count": 2,
+            "avg_latency": 6.66,
+            "current_optimized_delay": 7.33
         },
         "Formation": {
             "latencies": [
-                7.03,
-                7.02
+                7.93,
+                7.9,
+                7.91,
+                7.93,
+                7.9,
+                7.93,
+                7.93,
+                7.92,
+                7.93,
+                7.92
             ],
-            "total_searches": 2,
+            "total_searches": 52,
             "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 0,
-            "avg_latency": 7.03,
-            "current_optimized_delay": 7.73
+            "success_count": 52,
+            "step_back_count": 3,
+            "avg_latency": 7.92,
+            "current_optimized_delay": 8.71
         },
         "Next 1": {
             "latencies": [
-                3.59,
-                1.44
+                8.29,
+                8.22,
+                8.23,
+                8.2,
+                8.21,
+                8.21,
+                8.22,
+                8.22,
+                8.2,
+                8.23
             ],
-            "total_searches": 2,
+            "total_searches": 52,
             "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 0,
-            "avg_latency": 2.51,
-            "current_optimized_delay": 2.76
+            "success_count": 52,
+            "step_back_count": 2,
+            "avg_latency": 8.22,
+            "current_optimized_delay": 9.04
         },
         "Next 2": {
             "latencies": [
-                4.62,
-                0.52,
-                0.53,
-                2.23,
-                2.42,
-                0.52,
-                2.22
+                4.12,
+                4.15,
+                4.12,
+                4.12,
+                4.12,
+                4.13,
+                4.13,
+                4.12,
+                4.13,
+                0.53
             ],
-            "total_searches": 7,
+            "total_searches": 71,
             "fail_count": 0,
-            "success_count": 7,
-            "step_back_count": 0,
-            "avg_latency": 1.87,
-            "current_optimized_delay": 2.06
+            "success_count": 71,
+            "step_back_count": 2,
+            "avg_latency": 3.77,
+            "current_optimized_delay": 4.15
         },
         "Kickoff": {
             "latencies": [
-                5.05,
-                5.05
+                3.32,
+                3.33,
+                3.41,
+                3.34,
+                3.32,
+                3.35,
+                3.38,
+                3.36,
+                3.34,
+                3.43
             ],
-            "total_searches": 2,
+            "total_searches": 52,
             "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 3,
-            "avg_latency": 5.05,
-            "current_optimized_delay": 5.56
+            "success_count": 52,
+            "step_back_count": 21,
+            "avg_latency": 3.36,
+            "current_optimized_delay": 3.7
         },
         "Formation (จบครึ่งแรก)": {
             "latencies": [],
-            "total_searches": 2,
+            "total_searches": 52,
             "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 0
+            "success_count": 52,
+            "step_back_count": 2
         },
-        "next (จบครึ่งหลัง)": {
+        "Next (จบครึ่งหลัง)": {
             "latencies": [],
-            "total_searches": 2,
+            "total_searches": 49,
             "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 0
-        },
-        "Result 3": {
-            "latencies": [
-                1.23,
-                1.23
-            ],
-            "total_searches": 2,
-            "fail_count": 0,
-            "success_count": 2,
-            "step_back_count": 0,
-            "avg_latency": 1.23,
-            "current_optimized_delay": 1.35
+            "success_count": 49,
+            "step_back_count": 2
         }
     },
-    "total_rounds": 2
+    "total_rounds": 55
 }
