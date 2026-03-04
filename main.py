@@ -84,36 +84,57 @@ def handle_failure(step, available_keys):
     time.sleep(0.2 if not state["in_match"] else 1.0)
 
 def main_loop():
-    print("="*65 + "\n🚀 Awakening System: Optimized Function Structure\n" + "="*65)
+    print("="*65 + "\n🚀 Awakening System: Check Image Every 3s (15s MAX)\n" + "="*65)
     available_keys = list(set([step['post_key'] for step in FARM_STEPS if 'post_key' in step] + ['U']))
     last_step_idx = -1
+    step_start_time = time.time()
 
     while True:
         step = FARM_STEPS[state["cur"]]
         
-        # ✅ เช็คว่าถ้าเปลี่ยน Step ใหม่ ให้รีเซ็ต retry เฉพาะกิจสำหรับ match_phase
+        # ✅ เช็คว่าถ้าเปลี่ยน Step ใหม่ ให้รีเซ็ตตัวแปรต่างๆ
         if last_step_idx != state["cur"]:
-            if step.get("is_match_phase"):
-                state["retry"] = 0  # บังคับเริ่มนับ 1 ใหม่สำหรับช่วงแข่ง
+            state["retry"] = 0
+            step_start_time = time.time()
             last_step_idx = state["cur"]
 
-        limit = MATCH_WAIT_LIMIT if state["in_match"] else NORMAL_WAIT_LIMIT
-
-        # --- 🛡️ เพิ่มระบบ Wait for 50 before Scan ---
-        if step.get("is_match_phase") and state["retry"] < 50:
+        # --- 🛡️ ระบบ Wait สำหรับ Match Phase (รอ MATCH_PHASE_WAIT_COUNT ครั้งก่อนเช็ครูป) ---
+        if step.get("is_match_phase") and state["retry"] < MATCH_PHASE_WAIT_COUNT:
             state["retry"] += 1
-            # แสดง Label ให้ชัดเจนว่ากำลังรอกดของขั้นตอนไหน
-            print(f"⏳ {step['label']}: ช่วงแข่ง ({state['retry']}/50) ", end="\r")
-            time.sleep(1.0) 
+            print(f"⏳ {step['label']}: ช่วงแข่ง (รอ {state['retry']}/{MATCH_PHASE_WAIT_COUNT}) ", end="\r")
+            time.sleep(1.0)
             continue
-            
-        print(f"🔍 กำลังหาภาพ: {step['label']} | ครั้งที่: {state['retry'] + 1}/{limit}  ", end="\r")
-        res = find_best_match(step["files"], step["thresh"])
         
-        if res:
-            handle_success(step, res)
+        # --- 📊 ระบบเช็ครูปทุก 3 วินาที ในช่วง 15 วินาที ---
+        elapsed_in_step = time.time() - step_start_time
+        
+        if elapsed_in_step < MAX_WAIT_TIME:
+            # คำนวณจุดเช็ครูป (0, 3, 6, 9, 12)
+            check_point = (state["retry"] * CHECK_INTERVAL)
+            time_until_next_check = check_point - elapsed_in_step
+            
+            if time_until_next_check > 0.1:
+                # ยังไม่ถึงเวลาเช็ค ให้รอต่อ
+                print(f"⏳ {step['label']}: รอ ({elapsed_in_step:.1f}s) ", end="\r")
+                time.sleep(0.1)
+                continue
+            
+            # ถึงเวลาเช็ครูปแล้ว
+            state["retry"] += 1
+            print(f"🔍 เช็ครูป {step['label']}: ครั้งที่ {state['retry']}/5 ({elapsed_in_step:.1f}s) ", end="\r")
+            res = find_best_match(step["files"], step["thresh"])
+            
+            if res:
+                handle_success(step, res)
+                step_start_time = time.time()
+            else:
+                # ยังหาไม่เจอ ให้รอการเช็คครั้งถัดไป
+                time.sleep(0.2)
         else:
+            # หมดเวลา 15 วินาที ให้ทำ step back
+            print(f"\n❌ หมดเวลา {MAX_WAIT_TIME}s ที่ {step['label']}")
             handle_failure(step, available_keys)
+            step_start_time = time.time()
 
 if __name__ == "__main__":
     time.sleep(2)
