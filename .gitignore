@@ -130,7 +130,6 @@ dmypy.json
 
 # Project specific
 logs_screenshots/
-img/
 bot_stats.json
 *.log
 
