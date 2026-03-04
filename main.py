@@ -1,72 +1,84 @@
 import pyautogui, time, gc, random
+import win32con
 from config import *
 from utils import update_step_stats, find_best_match, press_key, save_error_screenshot
 
 state = {
-    "cur": 0, "retry": 0, "last_time": time.time(), "in_match": False,
-    "next_click_count": 0, "consecutive_back_steps": 0, "last_back_step_idx": -1, "rounds": 0
+    "cur": 0, 
+    "retry": 0, 
+    "last_time": time.time(), 
+    "in_match": False,
+    "next_click_count": 0, 
+    "consecutive_back_steps": 0, 
+    "last_back_step_idx": -1, 
+    "rounds": 0,
+    "formation_retry_count": 0,  # <--- ตัวนับจำนวนครั้งที่ติดลูปครึ่งแรก
+    "skip_match_wait": False,     # <--- ข้าม wait phase เมื่อ Step Back มาจาก step อื่น
+    "step_back_occurred": False,  # <--- ข้าม check interval เมื่อเพิ่ง Step Back
+    "force_normal_wait": False    # <--- ใช้ MAX_WAIT_TIME ปกติ (5 ครั้ง) แทน match phase (40 ครั้ง)
 }
 
 def handle_success(step, res, step_start_time):
     global state
     state["consecutive_back_steps"] = 0
     state["last_back_step_idx"] = -1
+    state["formation_retry_count"] = 0  # รีเซ็ตตัวนับลูป Formation เมื่อสำเร็จ
+    state["force_normal_wait"] = False  # รีเซ็ต limit กลับเป็น match phase ปกติ
     
     now = time.time()
-    elapsed = now - step_start_time  # ✓ ใช้ parameter ที่ถูกส่งมา
+    elapsed = now - step_start_time
     x, y, acc, name = res
-    is_end = (state["cur"] == len(FARM_STEPS) - 1)
-    post_delay = step.get("post_delay", DEFAULT_POST_DELAY)
-    delay_start = time.time()
-    time.sleep(post_delay)
-    actual_delay = time.time() - delay_start
-
-    print(f"   ∟ ⏱️ Delay: {actual_delay:.2f}s (config: {post_delay}s)")
-
-    # เรียก update_step_stats พร้อม actual delay
-    new_delay, total_rounds = update_step_stats(
-        step['label'], 
-        elapsed, 
-        is_end, 
-        actual_post_delay=actual_delay  # ✅ ส่ง actual delay
-    )
-    state["rounds"] = total_rounds
     
-    print(f"\n✅ เจอภาพ: {step['label']} | ใช้เวลา: {elapsed:.2f}s | Acc: {acc:.2f}")
-    pyautogui.click(x, y)
-    pyautogui.moveTo(CX, CY, duration=0) 
+    # ดึงค่า delay จาก config
+    post_delay = step.get("post_delay", DEFAULT_POST_DELAY)
 
-    if "post_key" in step:
-        time.sleep(new_delay) 
+    # 1. สั่งคลิกเป้าหมาย
+    pyautogui.click(x, y)
+    
+    # 2. ตรวจสอบว่ามีปุ่มคีย์บอร์ดที่ต้องกดหรือไม่
+    if 'post_key' in step:
         print(f"   ∟ ⌨️ Action: กดปุ่ม {step['post_key']}")
         press_key(step['post_key'])
+        
+    # 3. 🖱️ ย้ายเมาส์หลบไปตรงกลางจอ เพื่อไม่ให้บังภาพหรือติด Hover Effect
+    pyautogui.moveTo(CX, CY)
     
-    if is_end:
-        gc.collect()
-        print(f"\n🏆 จบรอบที่ {state['rounds']} | พัก {POST_MATCH_REST}s\n" + "🏆"*20)
-        time.sleep(POST_MATCH_REST)
-
-    state["cur"] = (state["cur"] + 1) % len(FARM_STEPS)
-    state["in_match"] = FARM_STEPS[state["cur"]].get("is_match_phase", False)
-    state["retry"] = 0
-    state["last_time"] = time.time()
-    state["next_click_count"] = 0
-    
-    # --- บันทึก delay และแสดง log ---
-    delay_start = time.time()
+    # 4. รอตาม config
     time.sleep(post_delay)
-    actual_delay = time.time() - delay_start
-    print(f"   ∟ ⏱️ Delay: {actual_delay:.2f}s (config: {post_delay}s)")
+
+    # ⏱️ หยุดนับ — actual_delay นับตั้งแต่เริ่ม step จนถึงหลัง sleep ครบทั้งกระบวนการ
+    actual_delay = time.time() - step_start_time
+
+    # Clear บรรทัด 🔍 เช็ครูป ก่อนพิมพ์ผลสำเร็จ
+    print(f"\r{' ' * 80}\r", end="")
+    print(f"✅ เจอภาพ: {step['label']} | Acc: {acc:.2f} | ใช้เวลาหา: {elapsed:.2f}s")
+    print(f"   ∟ ⏱️ Delay จริง: {actual_delay:.2f}s (ตั้งไว้: {post_delay}s)")
+
+    # เช็คว่าเป็นขั้นตอนสุดท้ายหรือไม่ เพื่อให้นับ total_rounds ได้ถูกต้อง
+    is_final_step = (step['label'] == "Final Result")
+
+    # อัปเดตสถิติ (ส่งพารามิเตอร์แบบระบุชื่อเพื่อป้องกัน Error)
+    update_step_stats(
+        step_label=step['label'], 
+        elapsed_time=elapsed, 
+        is_end=is_final_step, 
+        actual_post_delay=actual_delay,
+        is_step_back=False
+    )
+    
+    # เคลียร์ Memory (RAM) ทุกครั้งที่จบ 1 รอบ ป้องกันบอท [Awakening] ค้างตอนรันยาวๆ
+    if is_final_step:
+        gc.collect()
+        print(f"   ∟ ⏸️ หน่วงเวลา 5s หลังจบรอบ...")
+        time.sleep(5.0)
+
+    # เลื่อนไปยัง Step ถัดไป (และวนลูปกลับไป 0 หากถึงขั้นสุดท้าย)
+    state["cur"] = (state["cur"] + 1) % len(FARM_STEPS)
 
 def handle_failure(step, available_keys):
     global state
     state["retry"] += 1
     limit = MATCH_WAIT_LIMIT if state["in_match"] else NORMAL_WAIT_LIMIT
-    
-    if "Next" in step['label'] and state["retry"] % NEXT_CLICK_INTERVAL == 0:
-        state["next_click_count"] += 1
-        print(f"👉 [Action] คลิกย้ำครั้งที่ {state['next_click_count']} ที่ {step['label']}")
-        pyautogui.click(CX, CY + 150)
 
     if state["retry"] >= limit:
         # --- 🔄 ลองเช็ครูปของ step ก่อนหน้าก่อน Step Back ---
@@ -81,12 +93,18 @@ def handle_failure(step, available_keys):
             state["cur"] = prev_idx
             state["retry"] = 0
             state["last_time"] = time.time()
+            # 🖱️ เพิ่มการย้ายเมาส์กลับตรงกลางเผื่อไว้
+            pyautogui.moveTo(CX, CY) 
             time.sleep(0.5)
             return
         
         # --- ถ้าไม่เจอ ให้ทำการ Step Back ตามปกติ ---
-        # save_error_screenshot(step['label'])
-        update_step_stats(step['label'], is_step_back=True)
+        update_step_stats(
+            step_label=step['label'], 
+            elapsed_time=0.0, 
+            is_end=False, 
+            is_step_back=True
+        )
 
         if state["last_back_step_idx"] == state["cur"]:
             state["consecutive_back_steps"] += 1
@@ -107,101 +125,89 @@ def handle_failure(step, available_keys):
             else:
                 state["cur"] -= 1
                 print(f"🔙 [LOG] ย้อนกลับไป {FARM_STEPS[state['cur']]['label']}")
+        state["step_back_occurred"] = True  # เช็ครูปทันทีในรอบถัดไป
+        state["force_normal_wait"] = True   # ใช้ limit 5 ครั้งแทน 40 ครั้ง
         
         # --- ถ้า step ใหม่เป็น match_phase ให้ข้ามจังหวะรอ และเช็ครูปเลย ---
         next_step = FARM_STEPS[state["cur"]]
         if next_step.get("is_match_phase"):
-            state["retry"] = MATCH_PHASE_WAIT_COUNT + 1  # ข้ามการรอเลย เช็ครูปทันที
+            state["skip_match_wait"] = True  # ข้าม wait phase ทั้งหมดเลย
         else:
             state["retry"] = 0
         
         state["next_click_count"] = 0
         state["in_match"] = False
         state["last_time"] = time.time()
+        
+        # 🖱️ ย้ายเมาส์ไปตรงกลางหลังจบกระบวนการ Step Back (อันนี้มีอยู่เดิมแล้ว ทำงานได้ถูกต้องครับ)
         pyautogui.moveTo(CX, CY)
 
     time.sleep(0.2 if not state["in_match"] else 1.0)
 
 def main_loop():
-    print("="*65 + "\n🚀 Awakening System: Check Image Every 3s (15s MAX)\n" + "="*65)
-    available_keys = list(set([step['post_key'] for step in FARM_STEPS if 'post_key' in step] + ['U']))
+    print("="*65 + "\n🚀 [Awakening] System: Check Image Every 3s (Match Phase Support)\n" + "="*65)
+    available_keys = list(set([step.get('post_key') for step in FARM_STEPS if 'post_key' in step] + ['U']))
     last_step_idx = -1
     step_start_time = time.time()
-    wait_count = 0  # ← แยก counter สำหรับ wait phase
-    check_count = 0  # ← counter สำหรับ check phase
-    should_handle_failure = False
+    wait_count = 0  
+    check_count = 0 
 
     while True:
         step = FARM_STEPS[state["cur"]]
         
-        # ✅ เช็คว่าถ้าเปลี่ยน Step ใหม่ ให้รีเซ็ตตัวแปรต่างๆ
-        if last_step_idx != state["cur"]:
+        # ✅ 1. รีเซ็ตเมื่อเปลี่ยน Step (หรือเมื่อเพิ่ง Step Back)
+        if last_step_idx != state["cur"] or state.get("step_back_occurred"):
             wait_count = 0
             check_count = 0
             step_start_time = time.time()
             last_step_idx = state["cur"]
+            state["step_back_occurred"] = False
 
-        # --- 🛡️ ระบบ Wait สำหรับ Match Phase (รอ MATCH_PHASE_WAIT_COUNT ครั้งก่อนเช็ครูป) ---
+        # ✅ 2. ช่วงรอ (Wait Phase) สำหรับ Match Phase (รอ 120/120)
+        if step.get("is_match_phase") and state.get("skip_match_wait"):
+            wait_count = MATCH_PHASE_WAIT_COUNT  # ข้ามไปเช็ครูปเลย
+            state["skip_match_wait"] = False
+            step_start_time = time.time()
         if step.get("is_match_phase") and wait_count < MATCH_PHASE_WAIT_COUNT:
             wait_count += 1
-            print(f"⏳ {step['label']}: ช่วงแข่ง (รอ {wait_count}/{MATCH_PHASE_WAIT_COUNT}) ", end="\r")
+            print(f"⏳ {step['label']}: ช่วงแข่ง (รอ {wait_count}/{MATCH_PHASE_WAIT_COUNT})   ", end="\r")
             time.sleep(MATCH_PHASE_WAIT_TIME)
+            if wait_count == MATCH_PHASE_WAIT_COUNT:
+                print()
+                step_start_time = time.time() # รีเซ็ตเวลาเพื่อเริ่มนับช่วงเช็ครูป
             continue
         
-        # --- 📊 ระบบเช็ครูปทุก 3 วินาที ในช่วง MAX_WAIT_TIME ---
+        # ✅ 3. ช่วงเช็ครูป (Check Phase)
         elapsed_in_step = time.time() - step_start_time
-        max_wait = MAX_WAIT_TIME_MATCH_PHASE if step.get("is_match_phase") else MAX_WAIT_TIME
-        max_checks = int(max_wait / CHECK_INTERVAL) + 1  # คำนวณครั้งสูงสุด
+        is_forced_normal = state.get("force_normal_wait") and step.get("is_match_phase")
+        max_wait = MAX_WAIT_TIME if (not step.get("is_match_phase") or is_forced_normal) else MAX_WAIT_TIME_MATCH_PHASE
         
-        if elapsed_in_step >= max_wait and not should_handle_failure:
-            print(f"\n❌ หมดเวลา {max_wait}s ที่ {step['label']}")
-            handle_failure(step, available_keys)
-            # ถ้าเป็น Formation (จบครึ่งแรก) ให้วนเช็ค step เดิม ไม่ข้าม
-            if step['label'] == "Formation (จบครึ่งแรก)":
-                # reset ตัวแปรเพื่อวนเช็ค step เดิมใหม่
-                step_start_time = time.time()
-                wait_count = 0
-                check_count = 0
-                continue
-
         if elapsed_in_step < max_wait:
-            # คำนวณจุดเช็ครูป (0, 3, 6, 9, 12, ...)
             check_point = (check_count * CHECK_INTERVAL)
-            time_until_next_check = check_point - elapsed_in_step
             
-            if time_until_next_check > 0.1:
-                # ยังไม่ถึงเวลาเช็ค ให้รอต่อ
-                print(f"⏳ {step['label']}: รอ ({elapsed_in_step:.1f}s) ", end="\r")
-                time.sleep(0.1)
-                continue
+            if elapsed_in_step >= check_point:
+                check_count += 1
+                max_checks = int(max_wait / CHECK_INTERVAL)
+                print(f"🔍 เช็ครูป {step['label']}: ครั้งที่ {check_count}/{max_checks} ({elapsed_in_step:.1f}s)   ", end="\r")
+                
+                res = find_best_match(step["files"], step["thresh"])
+                if res:
+                    print() # 🛠️ ล็อกข้อความ "เช็ครูป" ล่าสุดไว้บนหน้าจอไม่ให้โดนทับ
+                    handle_success(step, res, step_start_time)
+                    continue 
+                
+            time.sleep(0.1) 
             
-            # ถึงเวลาเช็ครูปแล้ว
-            check_count += 1
-            print(f"🔍 เช็ครูป {step['label']}: ครั้งที่ {check_count}/{max_checks} ({elapsed_in_step:.1f}s) ", end="\r")
-            res = find_best_match(step["files"], step["thresh"])
-            
-            if res:
-                handle_success(step, res, step_start_time)
-                step_start_time = time.time()
-                wait_count = 0
-                check_count = 0
-            else:
-                # ยังหาไม่เจอ ให้รอการเช็คครั้งถัดไป
-                time.sleep(0.2)
         else:
-            # หมดเวลา ให้ทำ step back
-            print(f"\n❌ หมดเวลา {max_wait}s ที่ {step['label']}")
-            handle_failure(step, available_keys)
-            # ถ้าเป็น Formation (จบครึ่งแรก) ให้วนเช็ค step เดิม ไม่ข้าม
-            if step['label'] == "Formation (จบครึ่งแรก)":
-                step_start_time = time.time()
-                wait_count = 0
-                check_count = 0
-                continue
-            else:
-                step_start_time = time.time()
-                wait_count = 0
-                check_count = 0
+                # Step อื่นๆ ให้ถอยหลังทันที (พิมพ์ข้อความแค่ครั้งเดียว)
+                print(f"\n❌ หมดเวลา {max_wait}s ที่ {step['label']}")
+                
+                # 🛠️ บังคับตั้งค่า retry ให้เต็ม limit เพื่อให้ฟังก์ชัน handle_failure 
+                # ทำการ Step Back ทันทีโดยไม่ต้องวนลูปพิมพ์ซ้ำ 5 รอบ
+                limit = MATCH_WAIT_LIMIT if state["in_match"] else NORMAL_WAIT_LIMIT
+                state["retry"] = limit 
+                
+                handle_failure(step, available_keys)
 
 if __name__ == "__main__":
     time.sleep(2)
