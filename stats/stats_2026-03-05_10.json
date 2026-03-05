@@ -1,0 +1,314 @@
+{
+    "steps_data": {
+        "Hero Battle": {
+            "latencies": [
+                0.13,
+                0.13,
+                0.13,
+                0.12,
+                0.13,
+                0.12,
+                0.13,
+                0.13
+            ],
+            "total_searches": 8,
+            "fail_count": 0,
+            "success_count": 8,
+            "step_back_count": 0,
+            "avg_post_delay": 0,
+            "avg_latency": 0.13,
+            "current_optimized_delay": 0.14,
+            "post_delays_list": [
+                4.35,
+                4.36,
+                4.35,
+                4.34,
+                4.35,
+                4.35,
+                4.35,
+                4.35
+            ],
+            "avg_actual_delay": 4.35,
+            "last_actual_delay": 4.35,
+            "delay_diff_avg": 0.35
+        },
+        "Start Match": {
+            "latencies": [
+                0.26,
+                0.24,
+                0.25,
+                0.25,
+                0.26
+            ],
+            "total_searches": 5,
+            "fail_count": 0,
+            "success_count": 5,
+            "step_back_count": 3,
+            "avg_post_delay": 0,
+            "avg_latency": 0.25,
+            "current_optimized_delay": 0.28,
+            "post_delays_list": [
+                3.38,
+                3.37,
+                3.39,
+                3.39,
+                3.4
+            ],
+            "avg_actual_delay": 3.39,
+            "last_actual_delay": 3.4,
+            "delay_diff_avg": 0.49
+        },
+        "Yes": {
+            "latencies": [
+                0.13,
+                0.13,
+                0.14,
+                0.12,
+                0.13,
+                0.13
+            ],
+            "total_searches": 6,
+            "fail_count": 0,
+            "success_count": 6,
+            "step_back_count": 3,
+            "avg_post_delay": 0,
+            "avg_latency": 0.13,
+            "current_optimized_delay": 0.14,
+            "post_delays_list": [
+                1.96,
+                1.95,
+                1.97,
+                1.94,
+                1.96,
+                1.95
+            ],
+            "avg_actual_delay": 1.96,
+            "last_actual_delay": 1.95,
+            "delay_diff_avg": 0.36
+        },
+        "Press": {
+            "latencies": [
+                6.16,
+                6.15,
+                6.19,
+                6.16,
+                6.16
+            ],
+            "total_searches": 5,
+            "fail_count": 0,
+            "success_count": 5,
+            "step_back_count": 4,
+            "avg_post_delay": 0,
+            "avg_latency": 6.16,
+            "current_optimized_delay": 6.78,
+            "post_delays_list": [
+                15.1,
+                15.08,
+                15.12,
+                15.09,
+                15.09
+            ],
+            "avg_actual_delay": 15.1,
+            "last_actual_delay": 15.09,
+            "delay_diff_avg": 6.4
+        },
+        "Formation": {
+            "latencies": [
+                0.19,
+                0.21,
+                0.2,
+                0.2,
+                0.21
+            ],
+            "total_searches": 5,
+            "fail_count": 0,
+            "success_count": 5,
+            "step_back_count": 3,
+            "avg_post_delay": 0,
+            "avg_latency": 0.2,
+            "current_optimized_delay": 0.22,
+            "post_delays_list": [
+                9.53,
+                9.55,
+                9.54,
+                9.54,
+                9.55
+            ],
+            "avg_actual_delay": 9.54,
+            "last_actual_delay": 9.55,
+            "delay_diff_avg": 0.54
+        },
+        "Next 1": {
+            "latencies": [
+                3.58,
+                3.5,
+                3.54,
+                3.48,
+                3.56
+            ],
+            "total_searches": 5,
+            "fail_count": 0,
+            "success_count": 5,
+            "step_back_count": 3,
+            "avg_post_delay": 0,
+            "avg_latency": 3.53,
+            "current_optimized_delay": 3.88,
+            "post_delays_list": [
+                13.0,
+                12.93,
+                12.96,
+                12.91,
+                12.98
+            ],
+            "avg_actual_delay": 12.96,
+            "last_actual_delay": 12.98,
+            "delay_diff_avg": 3.76
+        },
+        "Next 2": {
+            "latencies": [
+                0.51,
+                0.43,
+                0.43,
+                0.46,
+                0.43,
+                0.45,
+                0.47,
+                0.48,
+                0.47,
+                0.45
+            ],
+            "total_searches": 10,
+            "fail_count": 0,
+            "success_count": 10,
+            "step_back_count": 3,
+            "avg_post_delay": 0,
+            "avg_latency": 0.46,
+            "current_optimized_delay": 0.51,
+            "post_delays_list": [
+                4.94,
+                4.86,
+                4.87,
+                4.89,
+                4.86,
+                4.89,
+                4.89,
+                4.91,
+                4.9,
+                4.88
+            ],
+            "avg_actual_delay": 4.89,
+            "last_actual_delay": 4.88,
+            "delay_diff_avg": 0.69
+        },
+        "Kickoff": {
+            "latencies": [
+                0.14,
+                0.14,
+                0.14,
+                0.13,
+                0.14,
+                0.15,
+                0.12,
+                0.14,
+                0.14
+            ],
+            "total_searches": 9,
+            "fail_count": 0,
+            "success_count": 9,
+            "step_back_count": 3,
+            "avg_post_delay": 0,
+            "avg_latency": 0.14,
+            "current_optimized_delay": 0.15,
+            "post_delays_list": [
+                4.17,
+                4.17,
+                4.16,
+                4.17,
+                4.17,
+                4.19,
+                4.15,
+                4.17,
+                4.18
+            ],
+            "avg_actual_delay": 4.17,
+            "last_actual_delay": 4.18,
+            "delay_diff_avg": 0.47
+        },
+        "Formation (จบครึ่งแรก)": {
+            "latencies": [],
+            "total_searches": 4,
+            "fail_count": 0,
+            "success_count": 4,
+            "step_back_count": 6,
+            "avg_post_delay": 0,
+            "post_delays_list": [
+                53.53,
+                62.65,
+                68.56,
+                41.64
+            ],
+            "avg_actual_delay": 56.59,
+            "last_actual_delay": 41.64,
+            "delay_diff_avg": 54.59
+        },
+        "Next (จบครึ่งหลัง)": {
+            "latencies": [],
+            "total_searches": 1,
+            "fail_count": 0,
+            "success_count": 1,
+            "step_back_count": 3,
+            "avg_post_delay": 0,
+            "post_delays_list": [
+                60.28
+            ],
+            "avg_actual_delay": 60.28,
+            "last_actual_delay": 60.28,
+            "delay_diff_avg": 57.78
+        },
+        "Station": {
+            "latencies": [
+                0.41,
+                0.42,
+                0.41,
+                0.43
+            ],
+            "total_searches": 4,
+            "fail_count": 0,
+            "success_count": 4,
+            "step_back_count": 0,
+            "avg_post_delay": 0,
+            "avg_latency": 0.42,
+            "current_optimized_delay": 0.46,
+            "post_delays_list": [
+                3.15,
+                3.15,
+                3.15,
+                3.15
+            ],
+            "avg_actual_delay": 3.15,
+            "last_actual_delay": 3.15,
+            "delay_diff_avg": 0.65
+        },
+        "Final Result": {
+            "latencies": [
+                0.48
+            ],
+            "total_searches": 1,
+            "fail_count": 0,
+            "success_count": 1,
+            "step_back_count": 0,
+            "avg_post_delay": 0,
+            "avg_latency": 0.48,
+            "current_optimized_delay": 0.53,
+            "post_delays_list": [
+                2.61
+            ],
+            "avg_actual_delay": 2.61,
+            "last_actual_delay": 2.61,
+            "delay_diff_avg": 0.71
+        }
+    },
+    "total_rounds": 1,
+    "start_time": "2026-03-05T10:00:03.566656",
+    "last_update": "2026-03-05T10:58:28.401486"
+}
